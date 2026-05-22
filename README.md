@@ -8,7 +8,6 @@ Built with the Mistral API and a set of Python tools for data querying, statisti
 The agent can:
 - Answer questions about campaign performance (ROI, CTR, CPC, CPM, conversion rate)
 - Compare platforms, cities, audiences, and campaign types
-- Fit statistical models and run correlation/outlier analysis
 - Generate interactive HTML charts and dashboards using Plotly
 - Generate static PNG charts using Matplotlib and Seaborn
 
@@ -130,6 +129,7 @@ User query
 Agent loop (mistral-large-latest)
     ├── inspect_dataset  → returns schema, column types, 3 sample rows
     ├── execute_code     → runs LLM-generated pandas/numpy code on the dataset
+    ├── plot_chart       → creates png visualization using deterministic tool with matplotlib.
     └── plot_code        → runs LLM-generated visualization code (Plotly/Seaborn)
     │
     ▼
