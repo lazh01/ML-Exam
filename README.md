@@ -129,7 +129,7 @@ User query
 Agent loop (mistral-large-latest)
     ├── inspect_dataset  → returns schema, column types, 3 sample rows
     ├── execute_code     → runs LLM-generated pandas/numpy code on the dataset
-    ├── plot_chart       → creates png visualization using deterministic tool with matplotlib.
+    ├── plot_chart       → creates png visualization using deterministic tool with matplotlib.(deprecated)
     └── plot_code        → runs LLM-generated visualization code (Plotly/Seaborn)
     │
     ▼
