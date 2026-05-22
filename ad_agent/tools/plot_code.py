@@ -11,17 +11,27 @@ import uuid
 import json
 
 from tools.execute_code import validate_code
-
 from logger import get_output_dir
-OUTPUT_DIR = get_output_dir()
+
 
 DATA_PATH = Path(__file__).parent.parent / "data" / "ads.csv"
 
 
-def plot_code(code: str) -> dict:
+def plot_code(code: str, queried_data_path: str = None) -> dict:
+    OUTPUT_DIR = get_output_dir()
+
     violations = validate_code(code)
     if violations:
         return {"error": f"Forbudte mønstre: {violations}"}
+
+    saved_data = None
+    if queried_data_path:
+        # Load the JSON data from file
+        raw_text = Path(queried_data_path).read_text(encoding="utf-8")
+        data_list = json.loads(raw_text)
+        
+        # Convert list of dicts into DataFrame
+        saved_data = pd.DataFrame(data_list)
 
     df = pd.read_csv(DATA_PATH)
     df.columns = [c.strip().lower().replace(" ", "_") for c in df.columns]
@@ -33,6 +43,7 @@ def plot_code(code: str) -> dict:
 
     namespace = {
         "df": df.copy(),
+        "saved_data": saved_data,
         "pd": pd,
         "np": np,
         "plt": plt,

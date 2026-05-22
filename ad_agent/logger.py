@@ -41,3 +41,17 @@ def get_session_log() -> list[dict]:
         return []
     with _LOG_FILE.open() as f:
         return [json.loads(line) for line in f if line.strip()]
+    
+def new_session() -> str:
+    global _SESSION_ID, _SESSION_DIR, OUTPUT_DIR, _LOG_FILE
+
+    _SESSION_ID = uuid.uuid4().hex[:8]
+    _SESSION_DIR = BASE_DIR / "sessions" / _SESSION_ID
+    _SESSION_DIR.mkdir(parents=True, exist_ok=True)
+
+    OUTPUT_DIR = _SESSION_DIR / "outputs"
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    _LOG_FILE = _SESSION_DIR / "log.jsonl"
+
+    return _SESSION_ID

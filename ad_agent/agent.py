@@ -68,7 +68,12 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "execute_code",
-            "description": "Execute Python code for statistical analysis. The dataframe is available as `df`. Assign your final result to `result`.",
+            "description": (
+                "Execute Python code for statistical analysis. The dataframe is available as `df`. Assign your final result to `result`."
+                "Use this for any calculations, groupings, or data manipulations needed to answer the question. "
+                "If more than 20 it will save the full result to a JSON file and return a preview instead. "
+                "Don't be afraid to use more times to provide better answers, e.g. one code execution to filter data, then another to calculate stats."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -114,22 +119,42 @@ TOOLS = [
                 "Create an interactive or static chart by writing Python code. "
                 "Prefer plotly (px, go) for interactive HTML charts with zoom and hover. "
                 "Fallback to seaborn (sns) or matplotlib (plt) for static PNG charts. "
+
                 "The dataframe is available as `df`. "
-                "For plotly: use `fig.write_html(filepath)` to save. "
+
+                "IMPORTANT: If `queried_data_path` is provided, the JSON file is automatically loaded "
+                "before code execution and made available as `saved_data`. "
+                "To use it, convert with `pd.DataFrame(saved_data)`. "
+                "NEVER load files manually. NEVER use open(). "
+
+                "For plotly figures: use `fig.write_html(filepath)`. "
                 "For matplotlib: use `plt.savefig(filepath_png, dpi=150, bbox_inches='tight'); plt.close()`. "
+                "For custom HTML dashboards: build the HTML as a string and save with "
+                "`filepath.write_text(html_string, encoding='utf-8')`. "
+
                 "The variables `filepath` and `filepath_png` are already defined — do NOT redefine them. "
                 "Always add legend, title, axis labels, and distinct colors per series. "
-                "Do NOT use open(), os., or hardcoded file paths."
-                "For custom HTML dashboards: build the HTML as a string, then use filepath.write_text(html_string, encoding='utf-8') to save it. "
-                "For plotly figures: always use fig.write_html(filepath). "
-                "NEVER use open() — it is banned. "
+                "Do NOT use open(), os., subprocess, or hardcoded file paths."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "Python code to generate the plot. Must save to `filepath`."
+                        "description": (
+                            "Python code to generate the plot. "
+                            "Must save to `filepath` or `filepath_png`. "
+                            "If `saved_data` is available, use it directly with "
+                            "`pd.DataFrame(saved_data)`. NEVER use open()."
+                        )
+                    },
+                    "queried_data_path": {
+                        "type": "string",
+                        "description": (
+                            "Optional path returned from a previous execute_code call. "
+                            "The file will be automatically loaded and exposed in code "
+                            "as `saved_data`."
+                        )
                     }
                 },
                 "required": ["code"]
@@ -159,10 +184,11 @@ def dispatch_tool(tool_name: str, tool_input: dict) -> str:
     log_tool_call(tool_name, tool_input, result)
     return json.dumps(result, default=str)
 
-def run_agent(user_query: str) -> str:
+def run_agent(user_query: str, verbose: bool = True) -> str:
     messages = [{"role": "user", "content": user_query}]
     log_tool_call("user_query", {"query": user_query}, {})
-    print(f"\nSpørgsmål: {user_query}")
+    if verbose:
+        print(f"\nSpørgsmål: {user_query}")
 
     while True:
         for attempt in range(5):
@@ -186,14 +212,17 @@ def run_agent(user_query: str) -> str:
         messages.append({"role": "assistant", "content": msg.content, "tool_calls": msg.tool_calls})
 
         if not msg.tool_calls:
-            print(f"\nSvar: {msg.content}\n")
+            if verbose:
+                print(f"\nSvar: {msg.content}\n")
             log_tool_call("final_answer", {"query": user_query}, {"answer": msg.content})
             return msg.content
 
         for tool_call in msg.tool_calls:
             name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
-            print(f"  → Kalder tool: {name}")
+            
+            if verbose:
+                print(f"  → Kalder tool: {name}")
 
             result = dispatch_tool(name, args)
 
