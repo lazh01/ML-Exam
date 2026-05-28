@@ -2,7 +2,6 @@ venv/
 __pycache__/
 *.pyc
 logs/
-outputs/
 .env
 data/ads.csv
 ad_agent/data/.~lock.ads.csv#
